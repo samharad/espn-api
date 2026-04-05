@@ -499,6 +499,12 @@ def _make_live_api_call(league):
     return league.espn_request.league_get(params=params, headers=headers)
 
 
+def _get_scored_cats(league):
+    """Fetch just league settings to get category sort directions."""
+    data = league.espn_request.league_get(params={'view': ['mSettings']})
+    return _parse_scored_cats(data)
+
+
 def _parse_scored_cats(data):
     """Extract {cat_name: is_reverse} from API response settings."""
     from espn_api.baseball.constant import STATS_MAP
@@ -838,14 +844,20 @@ def cmd_poll_matchup(args):
 
 def cmd_power_rankings(args):
     league = get_league()
-    boxes, scored_cats = get_live_boxes(league)
+    week = args.week or league.currentMatchupPeriod
+
+    if args.week and args.week != league.currentMatchupPeriod:
+        boxes = league.box_scores(matchup_period=week)
+        scored_cats = _get_scored_cats(league)
+    else:
+        boxes, scored_cats = get_live_boxes(league)
 
     # Collect raw stat values for every team
     team_stats = {}  # {team_abbrev: {cat: value}}
     for box in boxes:
         for team, stats in [(box.home_team, box.home_stats), (box.away_team, box.away_stats)]:
             abbrev = team.team_abbrev if hasattr(team, 'team_abbrev') else str(team)
-            team_stats[abbrev] = {cat: data['value'] for cat, data in stats.items() if data['value'] is not None}
+            team_stats[abbrev] = {cat: data['value'] for cat, data in stats.items() if data.get('value') is not None}
 
     cats = sort_categories(list(scored_cats.keys()))
     teams = sorted(team_stats.keys())
@@ -880,7 +892,7 @@ def cmd_power_rankings(args):
     name_w = 22
     total_w = 6
     header = f"  {'#':<3} {'Team':<{name_w}} {'Total':>{total_w}}  " + "  ".join(f"{c:>{cat_w}}" for c in cats)
-    print(f"Weekly Power Rankings — Week {league.currentMatchupPeriod}\n")
+    print(f"Weekly Power Rankings — Week {week}\n")
     print(header)
     print("  " + "─" * (len(header) - 2))
 
@@ -903,7 +915,7 @@ def cmd_help(args):
             ("matchup",         "<team>",                   "Current matchup for a specific team with full category breakdown"),
             ("my-matchup",      "",                         "Your current matchup (uses TEAM_ID)"),
             ("compare",         "<team1> <team2>",          "Side-by-side category comparison (must be matched up this week)"),
-            ("power-rankings",  "",                         "All teams ranked by category points this week (league-wide)"),
+            ("power-rankings",  "[--week N]",               "All teams ranked by category points this week (or week N)"),
         ]),
         ("Rosters & Players", [
             ("roster",          "<team> [-s SPLIT]",        "Roster sorted batters-first then pitchers (active→bench→IL). -s: season/proj/7/15/30"),
@@ -961,7 +973,8 @@ def main():
     p_activity.add_argument("--size", "-n", type=int, default=25, help="Number of transactions (default: 25)")
     p_schedule = sub.add_parser("schedule", help="Show a team's full schedule")
     p_schedule.add_argument("team", help="Team name or abbreviation (partial match)")
-    sub.add_parser("power-rankings", help="Weekly power rankings: all teams ranked by category points")
+    p_power = sub.add_parser("power-rankings", help="Weekly power rankings: all teams ranked by category points")
+    p_power.add_argument("--week", type=int, default=None, help="Matchup period (default: current)")
     sub.add_parser("help", help="Show detailed help for all commands")
     p_my_roster = sub.add_parser("my-roster", help="Show your roster (requires TEAM_ID)")
     p_my_roster.add_argument("--stats", "-s", default=None, choices=['season', 'proj', '7', '15', '30'],
