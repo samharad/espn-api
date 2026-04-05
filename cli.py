@@ -429,6 +429,67 @@ def cmd_activity(args):
             print(f"  {ts}  {action:<10}  {str(player):<25}  {team_name}")
 
 
+def _get_matchup_dates(league):
+    """Returns {matchup_period: date_str} with Mon–Sun week date ranges.
+
+    Each scoring period = 1 calendar day.  Matchup period 1 runs from SP 1
+    through the first full Sunday after a complete Mon-Sun week; every
+    subsequent matchup period is a 7-day Mon-Sun block (the last one
+    extends to finalScoringPeriod).
+    """
+    import datetime
+
+    today = datetime.date.today()
+    sp1_date = today - datetime.timedelta(days=league.scoringPeriodId - 1)
+
+    # First Monday on or after SP 1
+    days_to_monday = (7 - sp1_date.weekday()) % 7
+    first_monday = sp1_date + datetime.timedelta(days=days_to_monday)
+
+    # MP 1: season start through the Sunday ending the first full Mon-Sun week
+    mp1_end_date = first_monday + datetime.timedelta(days=6)
+    mp1_end_sp = (mp1_end_date - sp1_date).days + 1
+
+    total_mps = len(league.settings.matchup_periods)
+    matchup_dates = {}
+
+    for mp in range(1, total_mps + 1):
+        if mp == 1:
+            start_date = sp1_date
+            end_date = mp1_end_date
+        else:
+            start_sp = mp1_end_sp + 1 + (mp - 2) * 7
+            end_sp = min(start_sp + 6, league.finalScoringPeriod)
+            start_date = sp1_date + datetime.timedelta(days=start_sp - 1)
+            end_date = sp1_date + datetime.timedelta(days=end_sp - 1)
+
+        if start_date.month == end_date.month:
+            matchup_dates[mp] = f"{start_date.strftime('%b %-d')}–{end_date.day}"
+        else:
+            matchup_dates[mp] = f"{start_date.strftime('%b %-d')}–{end_date.strftime('%b %-d')}"
+
+    return matchup_dates
+
+
+def _matchup_result(matchup, team):
+    home = matchup.home_team
+    away = matchup.away_team
+    if hasattr(home, 'team_id') and home.team_id == team.team_id:
+        opponent = away.team_name if hasattr(away, 'team_name') else str(away)
+    else:
+        opponent = home.team_name if hasattr(home, 'team_name') else str(home)
+    winner = getattr(matchup, 'winner', None)
+    if winner == 'HOME' and hasattr(home, 'team_id') and home.team_id == team.team_id:
+        result = 'W'
+    elif winner == 'AWAY' and hasattr(away, 'team_id') and away.team_id == team.team_id:
+        result = 'W'
+    elif winner == 'UNDECIDED' or winner is None:
+        result = '-'
+    else:
+        result = 'L'
+    return opponent, result
+
+
 def cmd_schedule(args):
     league = get_league()
     query = args.team.lower()
@@ -439,26 +500,14 @@ def cmd_schedule(args):
     if not team:
         print(f"No team matching '{args.team}'", file=sys.stderr)
         sys.exit(1)
+    matchup_dates = _get_matchup_dates(league)
     print(f"{team.team_name} — Schedule\n")
-    print(f"  {'Wk':<4} {'Opponent':<30} {'Result'}")
-    print(f"  {'-'*50}")
+    print(f"  {'Wk':<4} {'Date':<14} {'Opponent':<30} {'Result'}")
+    print(f"  {'-'*62}")
     for week, matchup in enumerate(team.schedule, 1):
-        home = matchup.home_team
-        away = matchup.away_team
-        if hasattr(home, 'team_id') and home.team_id == team.team_id:
-            opponent = away.team_name if hasattr(away, 'team_name') else str(away)
-        else:
-            opponent = home.team_name if hasattr(home, 'team_name') else str(home)
-        winner = getattr(matchup, 'winner', None)
-        if winner == 'HOME' and hasattr(home, 'team_id') and home.team_id == team.team_id:
-            result = 'W'
-        elif winner == 'AWAY' and hasattr(away, 'team_id') and away.team_id == team.team_id:
-            result = 'W'
-        elif winner == 'UNDECIDED' or winner is None:
-            result = '-'
-        else:
-            result = 'L'
-        print(f"  {week:<4} {opponent:<30} {result}")
+        opponent, result = _matchup_result(matchup, team)
+        date_str = matchup_dates.get(week, '')
+        print(f"  {week:<4} {date_str:<14} {opponent:<30} {result}")
 
 
 PITCHING_CATS = {
@@ -724,25 +773,14 @@ def cmd_my_schedule(args):
     if not team:
         print("Error: TEAM_ID not set", file=sys.stderr)
         sys.exit(1)
+    matchup_dates = _get_matchup_dates(league)
     print(f"{team.team_name} — Schedule\n")
-    print(f"  {'Wk':<4} {'Opponent':<30} {'Result'}")
-    print(f"  {'-'*50}")
+    print(f"  {'Wk':<4} {'Date':<14} {'Opponent':<30} {'Result'}")
+    print(f"  {'-'*62}")
     for week, matchup in enumerate(team.schedule, 1):
-        home = matchup.home_team
-        away = matchup.away_team
-        opponent = (away.team_name if hasattr(away, 'team_name') else str(away)) \
-            if (hasattr(home, 'team_id') and home.team_id == team.team_id) \
-            else (home.team_name if hasattr(home, 'team_name') else str(home))
-        winner = getattr(matchup, 'winner', None)
-        if winner == 'HOME' and hasattr(home, 'team_id') and home.team_id == team.team_id:
-            result = 'W'
-        elif winner == 'AWAY' and hasattr(away, 'team_id') and away.team_id == team.team_id:
-            result = 'W'
-        elif winner == 'UNDECIDED' or winner is None:
-            result = '-'
-        else:
-            result = 'L'
-        print(f"  {week:<4} {opponent:<30} {result}")
+        opponent, result = _matchup_result(matchup, team)
+        date_str = matchup_dates.get(week, '')
+        print(f"  {week:<4} {date_str:<14} {opponent:<30} {result}")
 
 
 def cmd_teams(args):
