@@ -23,12 +23,18 @@ Configure your league by creating `~/.config/espn.json`:
 }
 ```
 
+Symlink onto your PATH:
+
+```bash
+ln -sf "$(pwd)/myenv/bin/espn" /usr/local/bin/espn
+```
+
 Then run from anywhere:
 
 ```bash
-myenv/bin/espn --help
-myenv/bin/espn standings
-myenv/bin/espn my-matchup
+espn --help
+espn standings
+espn my-matchup
 ```
 
 ---
