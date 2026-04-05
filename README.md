@@ -1,3 +1,38 @@
+## This Fork: ESPN Fantasy Baseball CLI
+
+This fork adds a `cli.py` — a terminal interface for ESPN Fantasy Baseball designed to be useful for AI agents and scripts. It exposes standings, rosters, matchups, free agents, power rankings, recent activity, and more as clean text output.
+
+### Installation
+
+```bash
+git clone https://github.com/samharad/espn-api
+cd espn-api
+python -m venv myenv
+myenv/bin/pip install -e .
+```
+
+Configure your league by creating `~/.config/espn.json`:
+
+```json
+{
+  "league_id": 123456789,
+  "year": 2026,
+  "team_id": 5,
+  "espn_s2": "your_espn_s2_cookie",
+  "swid": "{your-swid-cookie}"
+}
+```
+
+Then run from anywhere:
+
+```bash
+myenv/bin/espn --help
+myenv/bin/espn standings
+myenv/bin/espn my-matchup
+```
+
+---
+
 ![](https://github.com/cwendt94/espn-api/workflows/Espn%20API/badge.svg)
 ![](https://github.com/cwendt94/espn-api/workflows/Espn%20API%20Integration%20Test/badge.svg) [![codecov](https://codecov.io/gh/cwendt94/espn-api/branch/master/graphs/badge.svg)](https://codecov.io/gh/cwendt94/espn-api) [![Join the chat at https://gitter.im/ff-espn-api/community](https://badges.gitter.im/ff-espn-api/community.svg)](https://gitter.im/ff-espn-api/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![PyPI version](https://badge.fury.io/py/espn-api.svg)](https://badge.fury.io/py/espn-api)<a target="_blank" href="https://www.python.org/downloads/" title="Python version"><img src="https://img.shields.io/badge/python-%3E=_3.8-teal.svg"></a>
 

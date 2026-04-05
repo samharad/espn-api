@@ -10,6 +10,7 @@ with open("README.md") as f:
 setup(
     name='espn_api',
     packages=find_packages(),
+    py_modules=['cli'],
     version=pkg_vars["__version__"],
     author='Christian Wendt',
     description='ESPN API',
@@ -19,6 +20,11 @@ setup(
     setup_requires=['nose>=1.0'],
     test_suite='nose.collector',
     tests_require=['nose', 'requests_mock', 'coverage'],
+    entry_points={
+        'console_scripts': [
+            'espn=cli:main',
+        ],
+    },
     url='https://github.com/cwendt94/espn-api',
     classifiers=[
         'Programming Language :: Python :: 3',
