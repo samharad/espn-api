@@ -8,15 +8,19 @@ import argparse
 from espn_api.baseball import League
 
 CONFIG_FILE = "espn.json"
+CONFIG_PATHS = [
+    os.path.expanduser("~/.config/espn.json"),
+    os.path.join(os.getcwd(), CONFIG_FILE),
+]
 
 
 def load_config():
-    path = os.path.join(os.getcwd(), CONFIG_FILE)
-    if not os.path.exists(path):
-        print(f"Error: config file '{CONFIG_FILE}' not found in {os.getcwd()}", file=sys.stderr)
-        sys.exit(1)
-    with open(path) as f:
-        return json.load(f)
+    for path in CONFIG_PATHS:
+        if os.path.exists(path):
+            with open(path) as f:
+                return json.load(f)
+    print(f"Error: config file '{CONFIG_FILE}' not found in ~/.config/ or {os.getcwd()}", file=sys.stderr)
+    sys.exit(1)
 
 
 def get_my_team(league):
