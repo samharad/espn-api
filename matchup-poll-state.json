@@ -1,0 +1,254 @@
+{
+  "week": 1,
+  "wins": 5,
+  "losses": 3,
+  "ties": 2,
+  "categories": {
+    "R": "TIE",
+    "HR": "TIE",
+    "RBI": "WIN",
+    "ERA": "WIN",
+    "SB": "LOSS",
+    "SV": "LOSS",
+    "WHIP": "WIN",
+    "QS": "WIN",
+    "K": "WIN",
+    "OBP": "LOSS"
+  },
+  "history": [
+    {
+      "ts": 1775368515,
+      "wins": 5,
+      "losses": 3,
+      "ties": 2,
+      "categories": {
+        "R": "TIE",
+        "HR": "TIE",
+        "RBI": "WIN",
+        "ERA": "WIN",
+        "SB": "LOSS",
+        "SV": "LOSS",
+        "WHIP": "WIN",
+        "QS": "WIN",
+        "K": "WIN",
+        "OBP": "LOSS"
+      }
+    },
+    {
+      "ts": 1775368826,
+      "wins": 5,
+      "losses": 3,
+      "ties": 2,
+      "categories": {
+        "R": "TIE",
+        "HR": "TIE",
+        "RBI": "WIN",
+        "ERA": "WIN",
+        "SB": "LOSS",
+        "SV": "LOSS",
+        "WHIP": "WIN",
+        "QS": "WIN",
+        "K": "WIN",
+        "OBP": "LOSS"
+      }
+    },
+    {
+      "ts": 1775369114,
+      "wins": 5,
+      "losses": 3,
+      "ties": 2,
+      "categories": {
+        "R": "TIE",
+        "HR": "TIE",
+        "RBI": "WIN",
+        "ERA": "WIN",
+        "SB": "LOSS",
+        "SV": "LOSS",
+        "WHIP": "WIN",
+        "QS": "WIN",
+        "K": "WIN",
+        "OBP": "LOSS"
+      }
+    },
+    {
+      "ts": 1775369424,
+      "wins": 5,
+      "losses": 3,
+      "ties": 2,
+      "categories": {
+        "R": "TIE",
+        "HR": "TIE",
+        "RBI": "WIN",
+        "ERA": "WIN",
+        "SB": "LOSS",
+        "SV": "LOSS",
+        "WHIP": "WIN",
+        "QS": "WIN",
+        "K": "WIN",
+        "OBP": "LOSS"
+      }
+    },
+    {
+      "ts": 1775369712,
+      "wins": 5,
+      "losses": 3,
+      "ties": 2,
+      "categories": {
+        "R": "TIE",
+        "HR": "TIE",
+        "RBI": "WIN",
+        "ERA": "WIN",
+        "SB": "LOSS",
+        "SV": "LOSS",
+        "WHIP": "WIN",
+        "QS": "WIN",
+        "K": "WIN",
+        "OBP": "LOSS"
+      }
+    },
+    {
+      "ts": 1775370038,
+      "wins": 5,
+      "losses": 3,
+      "ties": 2,
+      "categories": {
+        "R": "TIE",
+        "HR": "TIE",
+        "RBI": "WIN",
+        "ERA": "WIN",
+        "SB": "LOSS",
+        "SV": "LOSS",
+        "WHIP": "WIN",
+        "QS": "WIN",
+        "K": "WIN",
+        "OBP": "LOSS"
+      }
+    },
+    {
+      "ts": 1775370315,
+      "wins": 5,
+      "losses": 3,
+      "ties": 2,
+      "categories": {
+        "R": "TIE",
+        "HR": "TIE",
+        "RBI": "WIN",
+        "ERA": "WIN",
+        "SB": "LOSS",
+        "SV": "LOSS",
+        "WHIP": "WIN",
+        "QS": "WIN",
+        "K": "WIN",
+        "OBP": "LOSS"
+      }
+    },
+    {
+      "ts": 1775370634,
+      "wins": 5,
+      "losses": 3,
+      "ties": 2,
+      "categories": {
+        "R": "TIE",
+        "HR": "TIE",
+        "RBI": "WIN",
+        "ERA": "WIN",
+        "SB": "LOSS",
+        "SV": "LOSS",
+        "WHIP": "WIN",
+        "QS": "WIN",
+        "K": "WIN",
+        "OBP": "LOSS"
+      }
+    },
+    {
+      "ts": 1775370913,
+      "wins": 5,
+      "losses": 3,
+      "ties": 2,
+      "categories": {
+        "R": "TIE",
+        "HR": "TIE",
+        "RBI": "WIN",
+        "ERA": "WIN",
+        "SB": "LOSS",
+        "SV": "LOSS",
+        "WHIP": "WIN",
+        "QS": "WIN",
+        "K": "WIN",
+        "OBP": "LOSS"
+      }
+    },
+    {
+      "ts": 1775371243,
+      "wins": 5,
+      "losses": 3,
+      "ties": 2,
+      "categories": {
+        "R": "TIE",
+        "HR": "TIE",
+        "RBI": "WIN",
+        "ERA": "WIN",
+        "SB": "LOSS",
+        "SV": "LOSS",
+        "WHIP": "WIN",
+        "QS": "WIN",
+        "K": "WIN",
+        "OBP": "LOSS"
+      }
+    },
+    {
+      "ts": 1775371511,
+      "wins": 5,
+      "losses": 3,
+      "ties": 2,
+      "categories": {
+        "R": "TIE",
+        "HR": "TIE",
+        "RBI": "WIN",
+        "ERA": "WIN",
+        "SB": "LOSS",
+        "SV": "LOSS",
+        "WHIP": "WIN",
+        "QS": "WIN",
+        "K": "WIN",
+        "OBP": "LOSS"
+      }
+    },
+    {
+      "ts": 1775371837,
+      "wins": 5,
+      "losses": 3,
+      "ties": 2,
+      "categories": {
+        "R": "TIE",
+        "HR": "TIE",
+        "RBI": "WIN",
+        "ERA": "WIN",
+        "SB": "LOSS",
+        "SV": "LOSS",
+        "WHIP": "WIN",
+        "QS": "WIN",
+        "K": "WIN",
+        "OBP": "LOSS"
+      }
+    },
+    {
+      "ts": 1775372112,
+      "wins": 5,
+      "losses": 3,
+      "ties": 2,
+      "categories": {
+        "R": "TIE",
+        "HR": "TIE",
+        "RBI": "WIN",
+        "ERA": "WIN",
+        "SB": "LOSS",
+        "SV": "LOSS",
+        "WHIP": "WIN",
+        "QS": "WIN",
+        "K": "WIN",
+        "OBP": "LOSS"
+      }
+    }
+  ]
+}
