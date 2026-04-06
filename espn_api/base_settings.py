@@ -19,7 +19,9 @@ class BaseSettings(object):
         self.scoring_type = data.get('scoringSettings', {}).get('scoringType')
         self.median_scoring = data.get('scoringSettings', {}).get('scoringEnhancementType') == 'WIN_BONUS_TOP_HALF'
         self._raw_scoring_settings = data.get('scoringSettings', {})
+        self._raw_roster_settings = data.get('rosterSettings', {})
         self._raw_schedule_settings = data.get('scheduleSettings', {})
+        self.lineup_slot_counts = self._raw_roster_settings.get('lineupSlotCounts', {})
         self.faab = data['acquisitionSettings']['isUsingAcquisitionBudget']
         self.acquisition_budget = data.get('acquisitionSettings', {}).get('acquisitionBudget', 0)
         divisions = data.get('scheduleSettings', {}).get('divisions', [])

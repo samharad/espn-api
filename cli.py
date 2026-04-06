@@ -208,6 +208,10 @@ _PITCHER_SLOT_NAMES = {'P', 'SP', 'RP'}
 # Lineup slot IDs in display order for batters and pitchers
 _BATTER_SLOT_ORDER  = [0, 1, 2, 3, 4, 6, 7, 5, 8, 9, 10, 11, 12, 16, 17]  # C→1B→2B→3B→SS→combo→OF→DH→UTIL→BE→IL
 _PITCHER_SLOT_ORDER = [13, 14, 15, 16, 17]                                  # P→SP→RP→BE→IL
+_ROSTER_SLOT_PRINT_ORDER = [0, 1, 2, 3, 4, 6, 7, 5, 8, 9, 10, 11, 12, 19, 13, 14, 15, 16, 17]
+_HITTER_SLOT_IDS = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 19}
+_PITCHING_SLOT_IDS = {13, 14, 15}
+_RESERVE_SLOT_IDS = {16, 17}
 
 
 def _is_pitcher_player(player):
@@ -225,6 +229,55 @@ def _roster_sort_key(player):
     order = _PITCHER_SLOT_ORDER if is_p else _BATTER_SLOT_ORDER
     slot_rank = order.index(slot_id) if slot_id in order else 50
     return (1 if is_p else 0, slot_rank, player.name)
+
+
+def _normalize_lineup_slot_counts(lineup_slot_counts):
+    return {int(slot_id): count for slot_id, count in (lineup_slot_counts or {}).items() if int(count) > 0}
+
+
+def _get_lineup_slot_counts(league):
+    counts = getattr(league.settings, 'lineup_slot_counts', None)
+    if counts:
+        return _normalize_lineup_slot_counts(counts)
+
+    data = league.espn_request.get_league()
+    return _normalize_lineup_slot_counts(data.get('settings', {}).get('rosterSettings', {}).get('lineupSlotCounts', {}))
+
+
+def _slot_group(slot_id):
+    if slot_id in _HITTER_SLOT_IDS:
+        return 0
+    if slot_id in _PITCHING_SLOT_IDS:
+        return 1
+    if slot_id in _RESERVE_SLOT_IDS:
+        return 2
+    return 3
+
+
+def _build_roster_rows(team, lineup_slot_counts):
+    from collections import defaultdict
+    from espn_api.baseball.constant import POSITION_MAP
+
+    players_by_slot = defaultdict(list)
+    for player in sorted(team.roster, key=_roster_sort_key):
+        slot_id = POSITION_MAP.get(player.lineupSlot)
+        players_by_slot[slot_id].append(player)
+
+    ordered_slot_ids = [slot_id for slot_id in _ROSTER_SLOT_PRINT_ORDER if lineup_slot_counts.get(slot_id, 0) > 0]
+    for slot_id in sorted(lineup_slot_counts):
+        if slot_id not in ordered_slot_ids:
+            ordered_slot_ids.append(slot_id)
+
+    rows = []
+    for slot_id in ordered_slot_ids:
+        slot_name = POSITION_MAP.get(slot_id, str(slot_id))
+        for _ in range(lineup_slot_counts.get(slot_id, 0)):
+            player = players_by_slot[slot_id].pop(0) if players_by_slot[slot_id] else None
+            rows.append((_slot_group(slot_id), slot_name, player))
+        for player in players_by_slot.get(slot_id, []):
+            rows.append((_slot_group(slot_id), slot_name, player))
+
+    return rows
 
 
 def _calc_player_stats_from_raw(raw_dict):
@@ -300,14 +353,16 @@ def _print_roster(league, team, stat_split):
         title += f" — {STAT_SPLIT_LABELS[stat_split]}"
     print(f"{title}\n")
 
-    roster = sorted(team.roster, key=_roster_sort_key)
+    lineup_slot_counts = _get_lineup_slot_counts(league)
+    roster_rows = _build_roster_rows(team, lineup_slot_counts)
+    roster_players = [player for _, _, player in roster_rows if player]
 
-    pos_w = max((_format_player_positions(p.eligibleSlots) for p in roster), key=len, default='Pos')
+    pos_w = max((_format_player_positions(p.eligibleSlots) for p in roster_players), key=len, default='Pos')
     pos_w = max(len(pos_w), 3)
 
     stat_map = {}
     if stat_split:
-        stat_map = _fetch_player_stats(league, roster, stat_split)
+        stat_map = _fetch_player_stats(league, roster_players, stat_split)
 
     stat_header = '  '.join(f"{c:>{_STAT_COL_WIDTH.get(c, 4)}}" for c in stat_cols)
     if stat_split:
@@ -319,22 +374,32 @@ def _print_roster(league, team, stat_split):
     print(f"  {'-' * sep_len}")
 
     last_group = None
-    for player in roster:
-        group = 1 if _is_pitcher_player(player) else 0
+    for group, slot_name, player in roster_rows:
         if last_group is not None and group != last_group:
             print()
         last_group = group
 
-        pos = _format_player_positions(player.eligibleSlots)
-        status = player.injuryStatus or ''
-        if status == 'ACTIVE':
-            status = ''
         if stat_split:
-            stats = stat_map.get(player.playerId, {})
-            stat_vals = '  '.join(f"{fmt_stat(stats.get(c), c):>{_STAT_COL_WIDTH.get(c, 4)}}" for c in stat_cols)
-            print(f"  {player.name:<25} {pos:<{pos_w}} {player.lineupSlot:<6} {str(player.proTeam):<5} {stat_vals}  {status}")
+            if player:
+                pos = _format_player_positions(player.eligibleSlots)
+                status = player.injuryStatus or ''
+                if status == 'ACTIVE':
+                    status = ''
+                stats = stat_map.get(player.playerId, {})
+                stat_vals = '  '.join(f"{fmt_stat(stats.get(c), c):>{_STAT_COL_WIDTH.get(c, 4)}}" for c in stat_cols)
+                print(f"  {player.name:<25} {pos:<{pos_w}} {slot_name:<6} {str(player.proTeam):<5} {stat_vals}  {status}")
+            else:
+                empty_stats = '  '.join(f"{'-':>{_STAT_COL_WIDTH.get(c, 4)}}" for c in stat_cols)
+                print(f"  {'-':<25} {'-':<{pos_w}} {slot_name:<6} {'':<5} {empty_stats}  ")
         else:
-            print(f"  {player.name:<25} {pos:<{pos_w}} {player.lineupSlot:<6} {str(player.proTeam):<6} {status}")
+            if player:
+                pos = _format_player_positions(player.eligibleSlots)
+                status = player.injuryStatus or ''
+                if status == 'ACTIVE':
+                    status = ''
+                print(f"  {player.name:<25} {pos:<{pos_w}} {slot_name:<6} {str(player.proTeam):<6} {status}")
+            else:
+                print(f"  {'-':<25} {'-':<{pos_w}} {slot_name:<6} {'':<6} ")
 
 
 def cmd_players(args):
