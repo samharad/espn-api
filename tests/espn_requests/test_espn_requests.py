@@ -11,6 +11,16 @@ class EspnRequestsTest(TestCase):
         url_api_key = 'https://registerdisney.go.com/jgc/v5/client/ESPN-FANTASYLM-PROD/api-key?langPref=en-US'
         mock_request.post(url_api_key, status_code=400)
 
+    @requests_mock.Mocker()
+    def test_league_post_uses_write_endpoint(self, mock_request):
+        request = EspnFantasyRequests(sport='mlb', league_id=1234, year=2026, cookies={'espn_s2': 'cookie1', 'SWID': '{SWID}'})
+        url = 'https://lm-api-writes.fantasy.espn.com/apis/v3/games/flb/seasons/2026/segments/0/leagues/1234/transactions/'
+        mock_request.post(url, status_code=200, json={'ok': True})
+
+        data = request.league_post(payload={'foo': 'bar'}, extend='/transactions/')
+
+        self.assertEqual(data, {'ok': True})
+
     # @requests_mock.Mocker()
     # @mock.patch('sys.stdout', new_callable=io.StringIO)
     # def test_authentication_api_fail(self, mock_request, mock_stdout):

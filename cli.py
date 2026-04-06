@@ -149,6 +149,77 @@ def cmd_my_roster(args):
     _print_roster(league, team, getattr(args, 'stats', None))
 
 
+def _format_slot_name(slot_id):
+    from espn_api.baseball.constant import POSITION_MAP
+    return POSITION_MAP.get(slot_id, str(slot_id))
+
+
+def _resolve_slot_id(slot_name):
+    from espn_api.baseball.constant import POSITION_MAP
+    if slot_name is None:
+        return None
+    slot_key = slot_name.upper()
+    if slot_key not in POSITION_MAP or not isinstance(POSITION_MAP[slot_key], int):
+        raise ValueError(f"Unknown slot '{slot_name}'")
+    return POSITION_MAP[slot_key]
+
+
+def _print_lineup_transaction_preview(action, payload):
+    item = payload['items'][0]
+    print(f"{action} dry run\n")
+    print(f"  team_id:           {payload['teamId']}")
+    print(f"  scoring_period_id: {payload['scoringPeriodId']}")
+    print(f"  player_id:         {item['playerId']}")
+    print(f"  from_slot:         {_format_slot_name(item['fromLineupSlotId'])}")
+    print(f"  to_slot:           {_format_slot_name(item['toLineupSlotId'])}")
+
+
+def cmd_il_put(args):
+    league = get_league()
+    team = get_my_team(league)
+    if not team:
+        print("Error: TEAM_ID not set", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        result = league.move_player_to_il(team.team_id, args.player, execute=not args.dry_run)
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    if args.dry_run:
+        _print_lineup_transaction_preview(f"Move '{args.player}' to IL", result)
+    else:
+        print(f"Moved '{args.player}' to IL.")
+
+
+def cmd_il_activate(args):
+    league = get_league()
+    team = get_my_team(league)
+    if not team:
+        print("Error: TEAM_ID not set", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        slot_id = _resolve_slot_id(args.slot)
+        result = league.activate_player_from_il(team.team_id, args.player, slot_id=slot_id, execute=not args.dry_run)
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    if args.dry_run:
+        _print_lineup_transaction_preview(f"Activate '{args.player}' from IL", result)
+    else:
+        target = _format_slot_name(slot_id if slot_id is not None else 16)
+        print(f"Activated '{args.player}' from IL to {target}.")
+
+
 _BATTER_POSITIONS = {'C', '1B', '2B', '3B', 'SS', 'OF', 'LF', 'CF', 'RF', 'DH', 'UT'}
 _PITCHER_POSITIONS = {'SP', 'RP', 'P'}
 
@@ -1023,6 +1094,8 @@ def cmd_help(args):
         ("Rosters & Players", [
             ("roster",          "<team> [-s SPLIT]",        "Roster sorted batters-first then pitchers (active→bench→IL). -s: season/proj/7/15/30"),
             ("my-roster",       "[-s SPLIT]",               "Your roster (uses TEAM_ID). Same sort and -s options as roster"),
+            ("il-put",          "<player> [--dry-run]",     "Move one of your rostered players to IL"),
+            ("il-activate",     "<player> [--slot SLOT] [--dry-run]", "Activate one of your IL players to BE by default or a specific slot"),
             ("players",         "[-f F] [-p POS] [-s S] [-n N]", "Browse players. -f: available/rostered/all. -p: C/1B/2B/3B/SS/OF/DH/SP/RP/batters/pitchers. -s: season/proj/7/15/30"),
         ]),
         ("Schedule & Activity", [
@@ -1082,6 +1155,13 @@ def main():
     p_my_roster = sub.add_parser("my-roster", help="Show your roster (requires TEAM_ID)")
     p_my_roster.add_argument("--stats", "-s", default=None, choices=['season', 'proj', '7', '15', '30'],
                               help="Show stat columns: season, proj, 7, 15, or 30 (days)")
+    p_il_put = sub.add_parser("il-put", help="Move one of your players to IL")
+    p_il_put.add_argument("player", help="Player name (partial match)")
+    p_il_put.add_argument("--dry-run", action="store_true", help="Show the transaction payload without submitting it")
+    p_il_activate = sub.add_parser("il-activate", help="Activate one of your IL players")
+    p_il_activate.add_argument("player", help="Player name (partial match)")
+    p_il_activate.add_argument("--slot", default=None, help="Destination slot (default: BE)")
+    p_il_activate.add_argument("--dry-run", action="store_true", help="Show the transaction payload without submitting it")
     sub.add_parser("my-schedule", help="Show your schedule (requires TEAM_ID)")
     sub.add_parser("my-matchup", help="Show your current matchup (requires TEAM_ID)")
     sub.add_parser("poll-matchup", help="Print a notification if matchup score changed since last poll (for cron use)")
@@ -1105,6 +1185,8 @@ def main():
         "schedule": cmd_schedule,
         "help": cmd_help,
         "my-roster": cmd_my_roster,
+        "il-put": cmd_il_put,
+        "il-activate": cmd_il_activate,
         "my-schedule": cmd_my_schedule,
         "my-matchup": cmd_my_matchup,
         "matchup": cmd_matchup,

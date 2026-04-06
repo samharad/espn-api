@@ -86,6 +86,34 @@ class EspnFantasyRequests(object):
 
         return response[0] if isinstance(response, list) else response
 
+    def _write_endpoint(self):
+        if 'lm-api-reads.fantasy.espn.com' in self.LEAGUE_ENDPOINT:
+            return self.LEAGUE_ENDPOINT.replace('lm-api-reads.fantasy.espn.com', 'lm-api-writes.fantasy.espn.com')
+        if 'fantasy.espn.com/apis/v3/games/' in self.LEAGUE_ENDPOINT:
+            return self.LEAGUE_ENDPOINT.replace('fantasy.espn.com/apis/v3/games/', 'lm-api-writes.fantasy.espn.com/apis/v3/games/')
+        return self.LEAGUE_ENDPOINT
+
+    def league_post(self, payload: dict = None, headers: dict = None, extend: str = ''):
+        endpoint = self._write_endpoint() + extend
+        r = requests.post(endpoint, json=payload, headers=headers, cookies=self.cookies)
+
+        if r.status_code != 200:
+            message = f'ESPN returned an HTTP {r.status_code}'
+            try:
+                details = r.json().get('messages') or []
+                if details:
+                    message += f": {details[0]}"
+            except ValueError:
+                pass
+            raise ESPNUnknownError(message)
+
+        response = r.json()
+
+        if self.logger:
+            self.logger.log_request(endpoint=endpoint, params=payload, headers=headers, response=response)
+
+        return response[0] if isinstance(response, list) else response
+
     def get(self, params: dict = None, headers: dict = None, extend: str = ''):
         endpoint = self.ENDPOINT + extend
         r = requests.get(endpoint, params=params, headers=headers, cookies=self.cookies)

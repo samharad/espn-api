@@ -162,3 +162,64 @@ class League(BaseLeague):
                 elif matchup.away_team == team.team_id:
                     matchup.away_team = team
         return box_data
+
+    def _find_roster_player(self, team_id: int, player_name: str) -> Player:
+        team = self.get_team_data(team_id)
+        if not team:
+            raise ValueError(f'Team {team_id} not found')
+
+        query = player_name.lower()
+        matches = [player for player in team.roster if query in player.name.lower()]
+
+        if not matches:
+            raise ValueError(f"No roster player matching '{player_name}'")
+        if len(matches) > 1:
+            names = ', '.join(player.name for player in matches)
+            raise ValueError(f"Ambiguous player name '{player_name}': {names}")
+        return matches[0]
+
+    def _build_lineup_payload(self, team_id: int, player: Player, to_slot_id: int, scoring_period: int = None) -> dict:
+        if not self.espn_request.cookies or 'SWID' not in self.espn_request.cookies:
+            raise ValueError('Private league credentials are required for roster updates')
+
+        from_slot_id = POSITION_MAP.get(player.lineupSlot)
+        if from_slot_id is None:
+            raise ValueError(f'Unknown current slot for {player.name}: {player.lineupSlot}')
+
+        return {
+            'isLeagueManager': False,
+            'teamId': team_id,
+            'type': 'ROSTER',
+            'memberId': self.espn_request.cookies['SWID'],
+            'scoringPeriodId': scoring_period or self.current_week,
+            'executionType': 'EXECUTE',
+            'items': [{
+                'playerId': player.playerId,
+                'type': 'LINEUP',
+                'fromLineupSlotId': from_slot_id,
+                'toLineupSlotId': to_slot_id,
+            }],
+        }
+
+    def move_player_to_il(self, team_id: int, player_name: str, scoring_period: int = None, execute: bool = True) -> dict:
+        player = self._find_roster_player(team_id, player_name)
+        if 'IL' not in player.eligibleSlots:
+            raise ValueError(f'{player.name} is not IL-eligible')
+        if player.lineupSlot == 'IL':
+            raise ValueError(f'{player.name} is already on IL')
+
+        payload = self._build_lineup_payload(team_id, player, POSITION_MAP['IL'], scoring_period=scoring_period)
+        return self.espn_request.league_post(payload=payload, extend='/transactions/') if execute else payload
+
+    def activate_player_from_il(self, team_id: int, player_name: str, slot_id: int = None, scoring_period: int = None, execute: bool = True) -> dict:
+        player = self._find_roster_player(team_id, player_name)
+        if player.lineupSlot != 'IL':
+            raise ValueError(f'{player.name} is not currently on IL')
+
+        destination = slot_id if slot_id is not None else POSITION_MAP['BE']
+        destination_name = POSITION_MAP.get(destination, destination)
+        if destination_name not in player.eligibleSlots and destination_name != 'BE':
+            raise ValueError(f'{player.name} is not eligible for slot {destination_name}')
+
+        payload = self._build_lineup_payload(team_id, player, destination, scoring_period=scoring_period)
+        return self.espn_request.league_post(payload=payload, extend='/transactions/') if execute else payload
